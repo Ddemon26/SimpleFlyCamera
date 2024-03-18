@@ -5,9 +5,9 @@ namespace Damon.SimpleFlyCamera
     public class SimpleCameraController : MonoBehaviour
     {
         [Header("Movement Settings")]
-        public MoveAxis Horizontal = new MoveAxis(KeyCode.D, KeyCode.A);
-        public MoveAxis Vertical = new MoveAxis(KeyCode.W, KeyCode.S);
-        public MoveAxis Up = new MoveAxis(KeyCode.E, KeyCode.Q);
+        public MoveAxis Horizontal = new(KeyCode.D, KeyCode.A);
+        public MoveAxis Vertical = new(KeyCode.W, KeyCode.S);
+        public MoveAxis Up = new(KeyCode.E, KeyCode.Q);
 
         [Tooltip("Exponential boost factor on translation, controllable by mouse wheel.")]
         public float Boost = 3.5f;
@@ -17,21 +17,29 @@ namespace Damon.SimpleFlyCamera
 
         [Header("Rotation Settings")]
         [Tooltip("X = Change in mouse position.\nY = Multiplicative factor for camera rotation.")]
-        public AnimationCurve MouseSensitivityCurve = new AnimationCurve(new Keyframe(0f, 0.5f, 0f, 5f), new Keyframe(1f, 2.5f, 0f, 0f));
+        public AnimationCurve MouseSensitivityCurve = new(new Keyframe(0f, 0.5f, 0f, 5f), new Keyframe(1f, 2.5f, 0f, 0f));
 
         [Tooltip("Time it takes to interpolate camera rotation 99% of the way to the target."), Range(0.001f, 1f)]
         public float RotationLerpTime = 0.01f;
 
+        public bool KeepCursorLocked = false;
+
         [Tooltip("Whether or not to invert our Y axis for mouse input to rotation.")]
         public bool InvertY = false;
 
-        private CameraState targetCameraState = new CameraState();
-        private CameraState interpolatingCameraState = new CameraState();
+        private CameraState targetCameraState = new();
+        private CameraState interpolatingCameraState = new();
 
         private void OnEnable()
         {
             targetCameraState.SetFromTransform(transform);
             interpolatingCameraState.SetFromTransform(transform);
+
+            if (KeepCursorLocked)
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+            }
         }
 
         private void Update()
@@ -44,8 +52,8 @@ namespace Damon.SimpleFlyCamera
         private void HandleInput()
         {
             // Right mouse button: lock/unlock cursor
-            if (Input.GetMouseButtonDown(1)) Cursor.lockState = CursorLockMode.Locked;
-            if (Input.GetMouseButtonUp(1))
+            if (Input.GetMouseButtonDown(1) && !KeepCursorLocked) Cursor.lockState = CursorLockMode.Locked;
+            if (Input.GetMouseButtonUp(1) && !KeepCursorLocked)
             {
                 Cursor.visible = true;
                 Cursor.lockState = CursorLockMode.None;
@@ -82,7 +90,7 @@ namespace Damon.SimpleFlyCamera
 
         private void UpdateCameraRotation()
         {
-            if (Input.GetMouseButton(1)) // Right mouse button held
+            if (KeepCursorLocked || Input.GetMouseButton(1)) // Right mouse button held or KeepCursorLocked is true
             {
                 var mouseMovement = new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y") * (InvertY ? 1 : -1));
                 var mouseSensitivityFactor = MouseSensitivityCurve.Evaluate(mouseMovement.magnitude);
@@ -91,5 +99,6 @@ namespace Damon.SimpleFlyCamera
                 targetCameraState.pitch += mouseMovement.y * mouseSensitivityFactor;
             }
         }
+
     }
 }
