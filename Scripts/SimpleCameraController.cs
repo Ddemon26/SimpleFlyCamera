@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+#if ENABLE_LEGACY_INPUT_MANAGER
 
 namespace Damon.SimpleFlyCamera
 {
@@ -160,3 +161,4 @@ namespace Damon.SimpleFlyCamera
 
     }
 }
+#endif
